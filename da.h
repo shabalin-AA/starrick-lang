@@ -1,3 +1,7 @@
+#ifndef _DA_H_
+#define _DA_H_
+
+
 #include <stdlib.h>
 
 #define DA_0_SIZE 8
@@ -30,3 +34,6 @@
 
 #define DA_DEINIT(DA) \
 		free((DA)->values)
+			
+		
+#endif

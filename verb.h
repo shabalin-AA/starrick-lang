@@ -1,3 +1,6 @@
+#ifndef _VERB_H_
+#define _VERB_H_
+
 
 typedef void (*builtin_fn)(void);
 
@@ -19,3 +22,12 @@ void doverb(const Verb* verb) {
 		(verb->fns.values[i])();
 	}
 }
+
+typedef struct {
+	size_t capacity;
+	size_t q;
+	Verb* values;
+} da_Verb;
+
+
+#endif
