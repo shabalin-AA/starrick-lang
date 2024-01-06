@@ -3,6 +3,7 @@
 
 
 #include <stdio.h>
+#include <stdbool.h>
 #include "da.h"
 
 typedef enum {
@@ -27,6 +28,7 @@ typedef struct {
 		char identifier[ID_LEN];
 		void* ref;
   } as;
+	bool bounded;
 } Value;
 
 typedef struct {
@@ -50,6 +52,7 @@ void println_Value(Value v) {
 }
 
 void deinit_Value(Value v) {
+	if (v.bounded) return;
 	if (v.type == VALUE_TYPE_ARRAY) {
 		da_Value* arr = (da_Value*)v.as.ref;
 		for (size_t i = 0; i < arr->q; i++) {
@@ -86,6 +89,7 @@ Noun init_Noun(char word[NOUN_LEN], Value v) {
 	Noun n;
 	strcpy(n.word, word);
 	n.value = v;
+	n.value.bounded = true;
 	return n;
 }
 

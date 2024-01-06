@@ -13,7 +13,8 @@ void eval(const char* src, size_t beg, size_t end) {
 		DA_INIT(arr, Value);
 		Value v = {
 			.type = VALUE_TYPE_ARRAY,
-			.as.ref = arr
+			.as.ref = arr,
+			.bounded = false
 		};
 		push_value(v);
 		new_current(arr);
@@ -32,7 +33,11 @@ void eval(const char* src, size_t beg, size_t end) {
 	if (src[beg] == '{') {
 		Verb* verb = malloc(sizeof(Verb));
 		*verb = init_Verb("anonymous");
-		Value v = { .type = VALUE_TYPE_VERB, .as.ref = verb };
+		Value v = { 
+			.type = VALUE_TYPE_VERB, 
+			.as.ref = verb,
+			.bounded = false 
+		};
 		push_value(v);
 		new_current(&verb->todo);
 		__record_verb = true;
@@ -68,7 +73,8 @@ void eval(const char* src, size_t beg, size_t end) {
 		if (__record_verb) {
 			Value v = {
 				.type = VALUE_TYPE_VERB,
-				.as.ref = verb
+				.as.ref = verb,
+				.bounded = false
 			};
 			push_value(v);
 		}
