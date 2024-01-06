@@ -86,5 +86,34 @@ void __cp2(void) {
 	push_value(copy_value(b));
 }
 
+da_Noun __nouns;
+
+Noun* find_noun(const char word[NOUN_LEN]) {
+	for (int i = __nouns.q-1; i >= 0; i--) {
+		if (strcmp(__nouns.values[i].word, word) == 0) 
+			return &__nouns.values[i];
+	}
+	return NULL;
+}
+
+void push_noun(Noun n) {
+	DA_PUSH(&__nouns, Noun, n);
+}
+
+void __bind(void) {
+	checkargc(2, "can bind only with 2 values");
+	Value id = pop_value();
+	checktype(&id, VALUE_TYPE_ID, "can bind only identifiers");
+	Value v = pop_value();
+	if (v.type == VALUE_TYPE_VERB) {
+		Verb* verb = (Verb*)v.as.ref;
+		strcpy(verb->word, id.as.identifier);
+		push_verb(*verb);
+	}
+	else {
+		push_noun(init_Noun(id.as.identifier, v));
+	}
+}
+
 
 #endif

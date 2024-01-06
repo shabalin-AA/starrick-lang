@@ -3,6 +3,7 @@
 
 
 #include <stdlib.h>
+#include <stdbool.h>
 #include "value.h"
 #include "da.h"
 
@@ -12,6 +13,7 @@ typedef enum {
 } STATE;
 
 STATE __state;
+bool __record_verb;
 da_Value __stack;
 
 void trace() {
@@ -26,6 +28,14 @@ struct {
 	size_t q;
 	da_Value** values;
 } __stack_to_push;
+
+void new_current(da_Value* new_cur) {
+	DA_PUSH(&__stack_to_push, da_Value*, new_cur);
+}
+
+void pop_current() {
+	DA_POP(&__stack_to_push, da_Value*);
+}
 
 #define __cur_stack (__stack_to_push.values[__stack_to_push.q-1])
 
