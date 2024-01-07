@@ -8,7 +8,6 @@
 
 typedef enum {
   VALUE_TYPE_NUMBER,
-  VALUE_TYPE_STRING,
 	VALUE_TYPE_ARRAY,
 	VALUE_TYPE_PROC,
 	VALUE_TYPE_VERB,
@@ -37,6 +36,20 @@ typedef struct {
   Value* values;
 } da_Value;
 
+#define NOUN_LEN 16
+
+typedef struct {
+	char word[NOUN_LEN];
+	Value value;
+} Noun;
+
+#define VERB_LEN 16
+
+typedef struct {
+	char word[VERB_LEN];
+	da_Value todo;
+} Verb;
+
 void println_Value(Value v) {
 	if (v.type == VALUE_TYPE_NUMBER) printf("<number> %g\n", v.as.number);
 	else if (v.type == VALUE_TYPE_ARRAY) {
@@ -48,6 +61,15 @@ void println_Value(Value v) {
 	}
 	else if (v.type == VALUE_TYPE_ID) {
 		printf("<identifier> %s\n", v.as.identifier);
+	}
+	else if (v.type == VALUE_TYPE_PROC) {
+		printf("<proc>\n");
+	}
+	else if (v.type == VALUE_TYPE_VERB) {
+		printf("<verb> %s\n", ((Verb*)v.as.ref)->word);
+	}
+	else if (v.type == VALUE_TYPE_NOUN) {
+		printf("<noun> %s\n", ((Noun*)v.as.ref)->word);
 	}
 }
 
@@ -66,13 +88,6 @@ Value copy_value(Value* a) {
 	Value b = { .type = a->type, .as = a->as };
 	return b;
 }
-
-#define NOUN_LEN 16
-
-typedef struct {
-	char word[NOUN_LEN];
-	Value value;
-} Noun;
 
 typedef struct {
 	size_t capacity;

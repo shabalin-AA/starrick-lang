@@ -7,13 +7,6 @@
 #include "value.h"
 #include "internals.h"
 
-#define VERB_LEN 16
-
-typedef struct {
-	char word[VERB_LEN];
-	da_Value todo;
-} Verb;
-
 Verb init_Verb(char word[VERB_LEN]) {
 	Verb verb;
 	DA_INIT(&verb.todo, Value);

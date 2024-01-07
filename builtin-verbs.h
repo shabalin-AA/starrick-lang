@@ -115,5 +115,63 @@ void __bind(void) {
 	}
 }
 
+void __repeat(void) {
+	checkargc(2, "can repeat verb for n times only");
+	Value verb = pop_value();
+	checktype(&verb, VALUE_TYPE_VERB, "can repeat only a verb");
+	Value times = pop_value();
+	checktype(&times, VALUE_TYPE_NUMBER, "times must be a number");
+	for (int i = 0; i < (int)times.as.number; i++) {
+		doverb((Verb*)verb.as.ref);
+	}
+}
+
+void __ss(void) {
+	Value v = {
+		.type = VALUE_TYPE_NUMBER,
+		.as.number = __cur_stack->q,
+		.bounded = false
+	};
+	push_value(v);
+}
+
+void __hash(void) {
+	checkargc(1, "need value to get its size");
+	Value* v = last_value();
+	size_t size = 0;
+	if (v->type == VALUE_TYPE_ARRAY) 
+		size = ((da_Value*)v->as.ref)->q;
+	Value hash = {
+		.type = VALUE_TYPE_NUMBER,
+		.as.number = size,
+		.bounded = false
+	};
+	push_value(hash);
+}
+
+void __map(void) {
+	checkargc(2, "need verb and array to map");
+	Value verb_val = pop_value();
+	checktype(&verb_val, VALUE_TYPE_VERB, "need a verb to map");
+	Value arr_val = pop_value();
+	checktype(&arr_val, VALUE_TYPE_ARRAY, "need an array to map");
+	da_Value* new_arr = malloc(sizeof(da_Value));
+	DA_INIT(new_arr, Value);
+	Value new_arr_val = {
+		.type = VALUE_TYPE_ARRAY,
+		.as.ref = new_arr,
+		.bounded = false
+	};
+	push_value(new_arr_val);
+	new_current(new_arr);
+	da_Value* arr = (da_Value*)arr_val.as.ref;
+	Verb* verb = (Verb*)verb_val.as.ref;
+	for (size_t i = 0; i < arr->q; i++) {
+		push_value(arr->values[i]);
+		doverb(verb);
+	}
+	pop_current();
+}
+
 
 #endif

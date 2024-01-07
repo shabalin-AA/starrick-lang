@@ -6,6 +6,9 @@
 #include "internals.h"
 #include "builtin-verbs.h"
 
+#define WORD_LEN 16
+char word[WORD_LEN];
+
 void eval(const char* src, size_t beg, size_t end) {
 	if (end - beg < 1) return;
 	if (src[beg] == '[') {
@@ -54,7 +57,8 @@ void eval(const char* src, size_t beg, size_t end) {
 		pop_current();
 		return;
 	}
-	char* word = malloc(end - beg);
+	bool ref = src[beg] == '&'; // push verb as verb value
+	if (ref) beg++;
 	strncpy(word, &src[beg], end - beg);
 	word[end - beg - 1] = 0;
 	// printf("evaluating: \"%s\"\n", word);
@@ -64,13 +68,14 @@ void eval(const char* src, size_t beg, size_t end) {
 	if ((number = atof(word))) {
 		Value v = {
 			.type = VALUE_TYPE_NUMBER,
-			.as.number = number
+			.as.number = number,
+			.bounded = false
 		};
 		push_value(v);
 	}
 	else if ((verb = find_verb(word))) {
 		// printf("verb found: \"%s\"\n", verb->word);
-		if (__record_verb) {
+		if (__record_verb || ref) {
 			Value v = {
 				.type = VALUE_TYPE_VERB,
 				.as.ref = verb,
@@ -85,12 +90,12 @@ void eval(const char* src, size_t beg, size_t end) {
 	}
 	else {
 		Value v = {
-			.type = VALUE_TYPE_ID
+			.type = VALUE_TYPE_ID,
+			.bounded = false
 		};
 		strcpy(v.as.identifier, word);
 		push_value(v);
 	}
-	free(word);
 }
 
 void push_builtin_verb(Proc proc, char word[VERB_LEN]) {
@@ -119,6 +124,10 @@ void init() {
 	push_builtin_verb(__flip, "flip");
 	push_builtin_verb(__pop, "pop");
 	push_builtin_verb(__bind, "bind");
+	push_builtin_verb(__repeat, "repeat");
+	push_builtin_verb(__ss, "ss");
+	push_builtin_verb(__hash, "#");
+	push_builtin_verb(__map, "map");
 }
 
 void deinit() {
@@ -138,6 +147,13 @@ int main() {
   char src[256];
 	__state = S_READ;
 	__record_verb = false;
+	printf("welcome to starrick language. available verbs:\n");
+	for (size_t i = 0; i < __verbs.q; i++) {
+		println_Verb(__verbs.values[i]);
+	}
+	printf("[1 2 3] -- array\n");
+	printf("{+ * pop} -- anonymous verb\n");
+	printf("&+ -- push + verb on a stack as value\n");
 	while (1) {
 		memset(src, 0, 256);
 		printf("\n> ");
