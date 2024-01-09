@@ -11,6 +11,7 @@ typedef enum {
 	VALUE_TYPE_ARRAY,
 	VALUE_TYPE_PROC,
 	VALUE_TYPE_VERB,
+	VALUE_TYPE_VERB_REF,
 	VALUE_TYPE_ID,
 	VALUE_TYPE_NOUN
 } VALUE_TYPE;
@@ -53,11 +54,13 @@ typedef struct {
 void println_Value(Value v) {
 	if (v.type == VALUE_TYPE_NUMBER) printf("<number> %g\n", v.as.number);
 	else if (v.type == VALUE_TYPE_ARRAY) {
-		printf("<array>\n");
+		puts("<array>");
+		puts("[");
 		da_Value* arr = (da_Value*)v.as.ref;
 		for (size_t i = 0; i < arr->q; i++) {
 			println_Value(arr->values[i]);
 		}
+		puts("]");
 	}
 	else if (v.type == VALUE_TYPE_ID) {
 		printf("<identifier> %s\n", v.as.identifier);
@@ -85,7 +88,16 @@ void deinit_Value(Value v) {
 }
 
 Value copy_value(Value* a) {
-	Value b = { .type = a->type, .as = a->as };
+	Value b = { .type = a->type, .as = a->as, .bounded = a->bounded };
+	if (a->type == VALUE_TYPE_ARRAY) {
+		da_Value* arr = (da_Value*)a->as.ref;
+		da_Value* new_arr = malloc(sizeof(da_Value));
+		DA_INIT(new_arr, Value);
+		for (size_t i = 0; i < arr->q; i++) {
+			DA_PUSH(new_arr, Value, copy_value(&arr->values[i]));
+		}
+		b.as.ref = new_arr;
+	}
 	return b;
 }
 

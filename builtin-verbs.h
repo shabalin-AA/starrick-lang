@@ -28,6 +28,7 @@ void __add(void) {
 	checktype(&b, VALUE_TYPE_NUMBER, "cannot add not a number");
 	a.as.number += b.as.number;
 	push_value(a);
+	deinit_Value(b);
 }
 
 void __mul(void) {
@@ -38,26 +39,29 @@ void __mul(void) {
 	checktype(&b, VALUE_TYPE_NUMBER, "cannot multiply not a number");
 	a.as.number *= b.as.number;
 	push_value(a);
+	deinit_Value(b);
 }
 
 void __sub(void) {
 	checkargc(2, "can subtract only 2 numbers");
-	Value a = pop_value();
 	Value b = pop_value();
+	Value a = pop_value();
 	checktype(&a, VALUE_TYPE_NUMBER, "cannot subtract not a number");
 	checktype(&b, VALUE_TYPE_NUMBER, "cannot subtract not a number");
 	a.as.number -= b.as.number;
 	push_value(a);
+	deinit_Value(b);
 }
 
 void __div(void) {
 	checkargc(2, "can divide only 2 numbers");
-	Value a = pop_value();
 	Value b = pop_value();
+	Value a = pop_value();
 	checktype(&a, VALUE_TYPE_NUMBER, "cannot divide not a number");
 	checktype(&b, VALUE_TYPE_NUMBER, "cannot divide not a number");
 	a.as.number /= b.as.number;
 	push_value(a);
+	deinit_Value(b);
 }
 
 void __cp(void) {
@@ -113,17 +117,21 @@ void __bind(void) {
 	else {
 		push_noun(init_Noun(id.as.identifier, v));
 	}
+	deinit_Value(id);
+	deinit_Value(v);
 }
 
 void __repeat(void) {
 	checkargc(2, "can repeat verb for n times only");
 	Value verb = pop_value();
-	checktype(&verb, VALUE_TYPE_VERB, "can repeat only a verb");
+	checktype(&verb, VALUE_TYPE_VERB_REF, "can repeat only a verb");
 	Value times = pop_value();
 	checktype(&times, VALUE_TYPE_NUMBER, "times must be a number");
 	for (int i = 0; i < (int)times.as.number; i++) {
 		doverb((Verb*)verb.as.ref);
 	}
+	deinit_Value(verb);
+	deinit_Value(times);
 }
 
 void __ss(void) {
@@ -152,7 +160,7 @@ void __hash(void) {
 void __map(void) {
 	checkargc(2, "need verb and array to map");
 	Value verb_val = pop_value();
-	checktype(&verb_val, VALUE_TYPE_VERB, "need a verb to map");
+	checktype(&verb_val, VALUE_TYPE_VERB_REF, "need a verb to map");
 	Value arr_val = pop_value();
 	checktype(&arr_val, VALUE_TYPE_ARRAY, "need an array to map");
 	da_Value* new_arr = malloc(sizeof(da_Value));
@@ -171,6 +179,242 @@ void __map(void) {
 		doverb(verb);
 	}
 	pop_current();
+	deinit_Value(verb_val);
+	deinit_Value(arr_val);
+}
+
+void __gr(void) {
+	checkargc(2, "need 2 arguments for comparison");
+	Value a = pop_value();
+	checktype(&a, VALUE_TYPE_NUMBER, "cant compare not numbers");
+	Value b = pop_value();
+	checktype(&b, VALUE_TYPE_NUMBER, "cant compare not numbers");
+	Value res = {
+		.type = VALUE_TYPE_NUMBER,
+		.as.number = a.as.number > b.as.number,
+		.bounded = false
+	};
+	push_value(res);
+	deinit_Value(a);
+	deinit_Value(b);
+}
+
+void __ls(void) {
+	checkargc(2, "need 2 arguments for comparison");
+	Value a = pop_value();
+	checktype(&a, VALUE_TYPE_NUMBER, "cant compare not numbers");
+	Value b = pop_value();
+	checktype(&b, VALUE_TYPE_NUMBER, "cant compare not numbers");
+	Value res = {
+		.type = VALUE_TYPE_NUMBER,
+		.as.number = a.as.number < b.as.number,
+		.bounded = false
+	};
+	push_value(res);
+	deinit_Value(a);
+	deinit_Value(b);
+}
+
+void __eq(void) {
+	checkargc(2, "need 2 arguments for comparison");
+	Value a = pop_value();
+	checktype(&a, VALUE_TYPE_NUMBER, "cant compare not numbers");
+	Value b = pop_value();
+	checktype(&b, VALUE_TYPE_NUMBER, "cant compare not numbers");
+	Value res = {
+		.type = VALUE_TYPE_NUMBER,
+		.as.number = a.as.number == b.as.number,
+		.bounded = false
+	};
+	push_value(res);
+	deinit_Value(a);
+	deinit_Value(b);
+}
+
+void __greq(void) {
+	checkargc(2, "need 2 arguments for comparison");
+	Value a = pop_value();
+	checktype(&a, VALUE_TYPE_NUMBER, "cant compare not numbers");
+	Value b = pop_value();
+	checktype(&b, VALUE_TYPE_NUMBER, "cant compare not numbers");
+	Value res = {
+		.type = VALUE_TYPE_NUMBER,
+		.as.number = a.as.number >= b.as.number,
+		.bounded = false
+	};
+	push_value(res);
+	deinit_Value(a);
+	deinit_Value(b);
+}
+
+void __lseq(void) {
+	checkargc(2, "need 2 arguments for comparison");
+	Value a = pop_value();
+	checktype(&a, VALUE_TYPE_NUMBER, "cant compare not numbers");
+	Value b = pop_value();
+	checktype(&b, VALUE_TYPE_NUMBER, "cant compare not numbers");
+	Value res = {
+		.type = VALUE_TYPE_NUMBER,
+		.as.number = a.as.number <= b.as.number,
+		.bounded = false
+	};
+	push_value(res);
+	deinit_Value(a);
+	deinit_Value(b);
+}
+
+void __and(void) {
+	checkargc(2, "need 2 arguments for and");
+	Value a = pop_value();
+	checktype(&a, VALUE_TYPE_NUMBER, "cant calc logic for not numbers");
+	Value b = pop_value();
+	checktype(&b, VALUE_TYPE_NUMBER, "cant calc logic for not numbers");
+	Value res = {
+		.type = VALUE_TYPE_NUMBER,
+		.as.number = a.as.number && b.as.number,
+		.bounded = false
+	};
+	push_value(res);
+	deinit_Value(a);
+	deinit_Value(b);
+}
+
+void __or(void) {
+	checkargc(2, "need 2 arguments for or");
+	Value a = pop_value();
+	checktype(&a, VALUE_TYPE_NUMBER, "cant calc logic for not numbers");
+	Value b = pop_value();
+	checktype(&b, VALUE_TYPE_NUMBER, "cant calc logic for not numbers");
+	Value res = {
+		.type = VALUE_TYPE_NUMBER,
+		.as.number = a.as.number || b.as.number,
+		.bounded = false
+	};
+	push_value(res);
+	deinit_Value(a);
+	deinit_Value(b);
+}
+
+void __not(void) {
+	checkargc(1, "need a value for not");
+	Value a = pop_value();
+	checktype(&a, VALUE_TYPE_NUMBER, "cant calc logic for not numbers");
+	Value res = {
+		.type = VALUE_TYPE_NUMBER,
+		.as.number = (1 - a.as.number),
+		.bounded = false
+	};
+	push_value(res);
+	deinit_Value(a);
+}
+
+void __join(void) {
+	checkargc(2, "can join only 2 values");
+	Value b = pop_value();
+	Value a = pop_value();
+	if (a.type == VALUE_TYPE_NUMBER) {
+		da_Value* new_arr = malloc(sizeof(da_Value));
+		DA_INIT(new_arr, Value);
+		Value new_arr_val = {
+			.type = VALUE_TYPE_ARRAY,
+			.as.ref = new_arr,
+			.bounded = false
+		};
+		DA_PUSH(new_arr, Value, a);
+		if (b.type == VALUE_TYPE_NUMBER) {
+			DA_PUSH(new_arr, Value, b);			
+		}
+		else if (b.type == VALUE_TYPE_ARRAY) {
+			da_Value* arr = (da_Value*)b.as.ref;
+			for (size_t i = 0; i < arr->q; i++) {
+				DA_PUSH(new_arr, Value, arr->values[i]);
+			}
+		}
+		else checktype(&b, VALUE_TYPE_ARRAY, "can join only numbers or arrays");
+		push_value(new_arr_val);
+	}
+	else if (a.type == VALUE_TYPE_ARRAY) {
+		da_Value* new_arr = (da_Value*)a.as.ref;
+		if (b.type == VALUE_TYPE_NUMBER) {
+			DA_PUSH(new_arr, Value, b);			
+		}
+		else if (b.type == VALUE_TYPE_ARRAY) {
+			da_Value* arr = (da_Value*)b.as.ref;
+			for (size_t i = 0; i < arr->q; i++) {
+				DA_PUSH(new_arr, Value, arr->values[i]);
+			}
+			deinit_Value(b);
+		}
+		push_value(a);
+	}
+	else checktype(&a, VALUE_TYPE_ARRAY, "can join only numbers or arrays");
+	deinit_Value(a);
+	deinit_Value(b);
+}
+
+void __reverse(void) {
+	checkargc(1, "need value to reverse");
+	Value* arr_val = last_value();
+	checktype(arr_val, VALUE_TYPE_ARRAY, "can reverse only array");
+	da_Value* arr = (da_Value*)arr_val->as.ref;
+	Value temp;
+	for (size_t i = 0; i < arr->q/2; i++) {
+		temp = arr->values[i];
+		arr->values[i] = arr->values[arr->q-1 - i];
+		arr->values[arr->q-1 - i] = temp;
+	}
+}
+
+void __range(void) {
+	checkargc(1, "need a value to range");
+	Value lim = pop_value();
+	checktype(&lim, VALUE_TYPE_NUMBER, "can range only to number");
+	da_Value* range = malloc(sizeof(da_Value));
+	Value range_val = {
+		.type = VALUE_TYPE_ARRAY,
+		.as.ref = range,
+		.bounded = false
+	};
+	for (int i = 0; i < (int)lim.as.number; i++) {
+		Value new_val = {
+			.type = VALUE_TYPE_NUMBER,
+			.as.number = (double)i,
+			.bounded = false
+		};
+		DA_PUSH(range, Value, new_val);
+	}
+	push_value(range_val);
+	deinit_Value(lim);
+}
+
+void __take(void) {
+	checkargc(2, "need array and quantity to take");
+	Value q = pop_value();
+	checktype(&q, VALUE_TYPE_NUMBER, "quantity must be a number");
+	Value* arr_val = last_value();
+	checktype(arr_val, VALUE_TYPE_ARRAY, "need array to take from");
+	da_Value* arr = (da_Value*)arr_val->as.ref;
+	new_current(arr);
+	size_t to_pop = arr->q - (size_t)q.as.number;
+	for (size_t i = 0; i < to_pop; i++) __pop();
+	pop_current();
+	deinit_Value(q);
+}
+
+void __reduce(void) {
+	checkargc(2, "need array and verb to reduce");
+	Value verb_val = pop_value();
+	checktype(&verb_val, VALUE_TYPE_VERB_REF, "need verb to reduce");
+	Verb* verb = (Verb*)verb_val.as.ref;
+	Value arr_val = pop_value();
+	checktype(&arr_val, VALUE_TYPE_ARRAY, "need array to reduce");
+	da_Value* arr = (da_Value*)arr_val.as.ref;
+	new_current(arr);
+	while (arr->q > 1) doverb(verb);
+	pop_current();
+	push_value(arr->values[0]);
+	deinit_Value(verb_val);
+	deinit_Value(arr_val);
 }
 
 

@@ -57,15 +57,15 @@ void eval(const char* src, size_t beg, size_t end) {
 		pop_current();
 		return;
 	}
-	bool ref = src[beg] == '&'; // push verb as verb value
+	bool ref = src[beg] == '&'; /* push verb as verb value */
 	if (ref) beg++;
 	strncpy(word, &src[beg], end - beg);
 	word[end - beg - 1] = 0;
 	// printf("evaluating: \"%s\"\n", word);
-	double number;
+	double number = 0.0;
 	Verb* verb;
 	Noun* noun;
-	if ((number = atof(word))) {
+	if (!strcmp(word, "0") || (number = atof(word))) {
 		Value v = {
 			.type = VALUE_TYPE_NUMBER,
 			.as.number = number,
@@ -76,8 +76,9 @@ void eval(const char* src, size_t beg, size_t end) {
 	else if ((verb = find_verb(word))) {
 		// printf("verb found: \"%s\"\n", verb->word);
 		if (__record_verb || ref) {
+			VALUE_TYPE type = ref ? VALUE_TYPE_VERB_REF : VALUE_TYPE_VERB;
 			Value v = {
-				.type = VALUE_TYPE_VERB,
+				.type = type,
 				.as.ref = verb,
 				.bounded = false
 			};
@@ -128,6 +129,19 @@ void init() {
 	push_builtin_verb(__ss, "ss");
 	push_builtin_verb(__hash, "#");
 	push_builtin_verb(__map, "map");
+	push_builtin_verb(__gr, ">");
+	push_builtin_verb(__ls, "<");
+	push_builtin_verb(__eq, "=");
+	push_builtin_verb(__greq, ">=");
+	push_builtin_verb(__lseq, "<=");
+	push_builtin_verb(__and, "and");
+	push_builtin_verb(__or, "or");
+	push_builtin_verb(__not, "not");
+	push_builtin_verb(__join, "join");
+	push_builtin_verb(__reverse, "reverse");
+	push_builtin_verb(__range, "range");
+	push_builtin_verb(__take, "take");
+	push_builtin_verb(__reduce, "reduce");
 }
 
 void deinit() {
@@ -147,13 +161,13 @@ int main() {
   char src[256];
 	__state = S_READ;
 	__record_verb = false;
-	printf("welcome to starrick language. available verbs:\n");
+	puts("welcome to starrick language. available verbs:");
 	for (size_t i = 0; i < __verbs.q; i++) {
 		println_Verb(__verbs.values[i]);
 	}
-	printf("[1 2 3] -- array\n");
-	printf("{+ * pop} -- anonymous verb\n");
-	printf("&+ -- push + verb on a stack as value\n");
+	puts("[1 2 3] -- array");
+	puts("{+ * pop} -- anonymous verb");
+	puts("&+ -- push + verb on a stack as value");
 	while (1) {
 		memset(src, 0, 256);
 		printf("\n> ");

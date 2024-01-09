@@ -17,7 +17,7 @@ bool __record_verb;
 da_Value __stack;
 
 void trace() {
-	printf("---- trace ----\n");
+	puts("---- trace ----");
 	for (size_t i = 0; i < __stack.q; i++) {
 		println_Value(__stack.values[i]);
 	}
