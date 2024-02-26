@@ -25,7 +25,7 @@ void doverb(const Verb* verb) {
 		else if (v->type == VALUE_TYPE_VERB) {
 			doverb((Verb*)v->as.ref);
 		}
-		else push_value(*v);
+		else push_value(copy_value(v));
 	}
 }
 

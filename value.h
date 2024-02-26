@@ -52,7 +52,8 @@ typedef struct {
 } Verb;
 
 void println_Value(Value v) {
-	if (v.type == VALUE_TYPE_NUMBER) printf("<number> %g\n", v.as.number);
+	if (v.type == VALUE_TYPE_NUMBER) 
+		printf("<number> %lf\n", v.as.number);
 	else if (v.type == VALUE_TYPE_ARRAY) {
 		puts("<array>");
 		puts("[");
@@ -94,7 +95,7 @@ Value copy_value(Value* a) {
 		da_Value* new_arr = malloc(sizeof(da_Value));
 		DA_INIT(new_arr, Value);
 		for (size_t i = 0; i < arr->q; i++) {
-			DA_PUSH(new_arr, Value, copy_value(&arr->values[i]));
+			DA_PUSH(new_arr, copy_value(&arr->values[i]));
 		}
 		b.as.ref = new_arr;
 	}

@@ -1,3 +1,5 @@
+#include <stdlib.h>
+#include <time.h>
 #include <ctype.h>
 #include <string.h>
 #include <stdbool.h>
@@ -10,10 +12,9 @@
 char word[WORD_LEN];
 
 void eval(const char* src, size_t beg, size_t end) {
-	if (end - beg < 1) return;
+	if (end - beg < 2) return;
 	if (src[beg] == '[') {
 		da_Value* arr = malloc(sizeof(da_Value));
-		DA_INIT(arr, Value);
 		Value v = {
 			.type = VALUE_TYPE_ARRAY,
 			.as.ref = arr,
@@ -33,11 +34,15 @@ void eval(const char* src, size_t beg, size_t end) {
 		pop_current();
 		return;
 	}
+	bool ref = src[beg] == '&'; /* push verb as verb value */
+	if (ref) beg++;
+	strncpy(word, &src[beg], end - beg);
+	word[end - beg - 1] = 0;
 	if (src[beg] == '{') {
 		Verb* verb = malloc(sizeof(Verb));
 		*verb = init_Verb("anonymous");
 		Value v = { 
-			.type = VALUE_TYPE_VERB, 
+			.type = ref ? VALUE_TYPE_VERB_REF : VALUE_TYPE_VERB, 
 			.as.ref = verb,
 			.bounded = false 
 		};
@@ -57,10 +62,6 @@ void eval(const char* src, size_t beg, size_t end) {
 		pop_current();
 		return;
 	}
-	bool ref = src[beg] == '&'; /* push verb as verb value */
-	if (ref) beg++;
-	strncpy(word, &src[beg], end - beg);
-	word[end - beg - 1] = 0;
 	// printf("evaluating: \"%s\"\n", word);
 	double number = 0.0;
 	Verb* verb;
@@ -100,26 +101,23 @@ void eval(const char* src, size_t beg, size_t end) {
 }
 
 void push_builtin_verb(Proc proc, char word[VERB_LEN]) {
-	Verb verb;
-	DA_INIT(&verb.todo, Value);
+	Verb verb = {0};
 	Value v = { .type = VALUE_TYPE_PROC, .as.proc = proc };
-	DA_PUSH(&verb.todo, Value, v);
+	DA_PUSH(&verb.todo, v);
 	strcpy(verb.word, word);
-	DA_PUSH(&__verbs, Verb, verb);
+	DA_PUSH(&__verbs, verb);
 }
 
 void init() {
-	DA_INIT(&__stack, Value);
-	DA_INIT(&__stack_to_push, da_Value*);
-	DA_PUSH(&__stack_to_push, da_Value*, &__stack);
-	DA_INIT(&__verbs, Verb);
-	DA_INIT(&__nouns, Noun);
+	DA_PUSH(&__stack_to_push, &__stack);
 	push_builtin_verb(__quit, "quit");
 	push_builtin_verb(trace, "trace");
+	push_builtin_verb(__print, "print");
 	push_builtin_verb(__add, "+");
 	push_builtin_verb(__mul, "*");
 	push_builtin_verb(__sub, "-");
 	push_builtin_verb(__div, "/");
+	push_builtin_verb(__mod, "%");
 	push_builtin_verb(__cp, "cp");
 	push_builtin_verb(__cp2, "cp2");
 	push_builtin_verb(__flip, "flip");
@@ -142,6 +140,8 @@ void init() {
 	push_builtin_verb(__range, "range");
 	push_builtin_verb(__take, "take");
 	push_builtin_verb(__reduce, "reduce");
+	push_builtin_verb(__filter, "filter");
+	push_builtin_verb(__rnd, "rnd");
 }
 
 void deinit() {
@@ -156,22 +156,31 @@ void deinit() {
 	DA_DEINIT(&__nouns);
 }
 
-int main() {
+int main(int argc, char** argv) {
+  srand(time(0));
+	bool interpreter = argc == 1;
 	init();
   char src[256];
 	__state = S_READ;
 	__record_verb = false;
-	puts("welcome to starrick language. available verbs:");
-	for (size_t i = 0; i < __verbs.q; i++) {
-		println_Verb(__verbs.values[i]);
+	if (interpreter) {
+		puts("welcome to starrick language. available verbs:");
+		for (size_t i = 0; i < __verbs.q; i++) {
+			println_Verb(__verbs.values[i]);
+		}
+		puts("[1 2 3] -- array");
+		puts("{+ * pop} -- anonymous verb");
+		puts("&+ -- push + verb on a stack as value");
 	}
-	puts("[1 2 3] -- array");
-	puts("{+ * pop} -- anonymous verb");
-	puts("&+ -- push + verb on a stack as value");
+	FILE* source = interpreter ? stdin : fopen(argv[1], "r");
+	if (!source) {
+		puts("unable to open file\n");
+		exit(1);
+	}
 	while (1) {
 		memset(src, 0, 256);
-		printf("\n> ");
-		fgets(src, 256, stdin);
+		if (interpreter) printf("\n> ");
+		if (!fgets(src, 256, source)) exit(0);
 		// printf("entered: \"%s\"\n", src);
 		size_t beg = 0, end = 0;
 		for (size_t ip = 0; ip <= strlen(src); ip++) {
@@ -186,11 +195,12 @@ int main() {
 					__state = S_READ;
 					beg = ip;
 					end = ip + 1;
-				}
-			}
-		}
-		trace();
+				} /* isspace */
+			} /* S_READ */
+		} /* for */ 
+		if (interpreter) trace();
 	}
 	deinit();
+	fclose(source);
   return 0;
 }

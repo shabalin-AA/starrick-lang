@@ -14,7 +14,7 @@ typedef enum {
 
 STATE __state;
 bool __record_verb;
-da_Value __stack;
+da_Value __stack = {0};
 
 void trace() {
 	puts("---- trace ----");
@@ -27,14 +27,14 @@ struct {
 	size_t capacity;
 	size_t q;
 	da_Value** values;
-} __stack_to_push;
+} __stack_to_push = {0};
 
 void new_current(da_Value* new_cur) {
-	DA_PUSH(&__stack_to_push, da_Value*, new_cur);
+	DA_PUSH(&__stack_to_push, new_cur);
 }
 
 void pop_current() {
-	DA_POP(&__stack_to_push, da_Value*);
+	DA_POP(&__stack_to_push);
 }
 
 #define __cur_stack (__stack_to_push.values[__stack_to_push.q-1])
@@ -56,13 +56,13 @@ void checktype(Value* v, VALUE_TYPE required_type, const char* msg) {
 }
 
 void push_value(Value v) {
-	DA_PUSH(__cur_stack, Value, v); 
+	DA_PUSH(__cur_stack, v); 
 }
 
 Value pop_value() {
 	checkargc(1, "cant pop from empty stack");
   Value v = __cur_stack->values[__cur_stack->q-1];
-  DA_POP(__cur_stack, Value);
+  DA_POP(__cur_stack);
   return v;
 }
 

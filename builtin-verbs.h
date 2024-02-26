@@ -4,7 +4,7 @@
 
 #include "internals.h"
 
-da_Verb __verbs;
+da_Verb __verbs = {0};
 
 Verb* find_verb(const char word[VERB_LEN]) {
 	for (int i = __verbs.q-1; i >= 0; i--) {
@@ -14,11 +14,14 @@ Verb* find_verb(const char word[VERB_LEN]) {
 	return NULL;
 }
 
-void push_verb(Verb v) {
-	DA_PUSH(&__verbs, Verb, v);
-}
+void push_verb(Verb v) { DA_PUSH(&__verbs, v); }
 
 void __quit(void) { exit(0); }
+
+void __print(void) {
+	checkargc(1, "need value to print");
+	println_Value(__cur_stack->values[__cur_stack->q-1]);
+}
 
 void __add(void) {
 	checkargc(2, "can add only 2 numbers");
@@ -90,7 +93,7 @@ void __cp2(void) {
 	push_value(copy_value(b));
 }
 
-da_Noun __nouns;
+da_Noun __nouns = {0};
 
 Noun* find_noun(const char word[NOUN_LEN]) {
 	for (int i = __nouns.q-1; i >= 0; i--) {
@@ -101,7 +104,7 @@ Noun* find_noun(const char word[NOUN_LEN]) {
 }
 
 void push_noun(Noun n) {
-	DA_PUSH(&__nouns, Noun, n);
+	DA_PUSH(&__nouns, n);
 }
 
 void __bind(void) {
@@ -320,15 +323,16 @@ void __join(void) {
 			.as.ref = new_arr,
 			.bounded = false
 		};
-		DA_PUSH(new_arr, Value, a);
+		DA_PUSH(new_arr, a);
 		if (b.type == VALUE_TYPE_NUMBER) {
-			DA_PUSH(new_arr, Value, b);			
+			DA_PUSH(new_arr, b);			
 		}
 		else if (b.type == VALUE_TYPE_ARRAY) {
 			da_Value* arr = (da_Value*)b.as.ref;
 			for (size_t i = 0; i < arr->q; i++) {
-				DA_PUSH(new_arr, Value, arr->values[i]);
+				DA_PUSH(new_arr, arr->values[i]);
 			}
+			free(arr->values);
 		}
 		else checktype(&b, VALUE_TYPE_ARRAY, "can join only numbers or arrays");
 		push_value(new_arr_val);
@@ -336,20 +340,18 @@ void __join(void) {
 	else if (a.type == VALUE_TYPE_ARRAY) {
 		da_Value* new_arr = (da_Value*)a.as.ref;
 		if (b.type == VALUE_TYPE_NUMBER) {
-			DA_PUSH(new_arr, Value, b);			
+			DA_PUSH(new_arr, b);			
 		}
 		else if (b.type == VALUE_TYPE_ARRAY) {
 			da_Value* arr = (da_Value*)b.as.ref;
 			for (size_t i = 0; i < arr->q; i++) {
-				DA_PUSH(new_arr, Value, arr->values[i]);
+				DA_PUSH(new_arr, arr->values[i]);
 			}
-			deinit_Value(b);
+			free(arr->values);
 		}
 		push_value(a);
 	}
 	else checktype(&a, VALUE_TYPE_ARRAY, "can join only numbers or arrays");
-	deinit_Value(a);
-	deinit_Value(b);
 }
 
 void __reverse(void) {
@@ -381,7 +383,7 @@ void __range(void) {
 			.as.number = (double)i,
 			.bounded = false
 		};
-		DA_PUSH(range, Value, new_val);
+		DA_PUSH(range, new_val);
 	}
 	push_value(range_val);
 	deinit_Value(lim);
@@ -416,6 +418,66 @@ void __reduce(void) {
 	deinit_Value(verb_val);
 	deinit_Value(arr_val);
 }
+
+
+void __filter(void) {
+	checkargc(2, "[filter] need verb and array");
+	Value verb_val = pop_value();
+	checktype(&verb_val, VALUE_TYPE_VERB_REF, "[filter] need a verb");
+	Value arr_val = pop_value();
+	checktype(&arr_val, VALUE_TYPE_ARRAY, "[filter] need an array");
+	da_Value* new_arr = malloc(sizeof(da_Value));
+	DA_INIT(new_arr, Value);
+	Value new_arr_val = {
+		.type = VALUE_TYPE_ARRAY,
+		.as.ref = new_arr,
+		.bounded = false
+	};
+	push_value(new_arr_val);
+	new_current(new_arr);
+	da_Value* arr = (da_Value*)arr_val.as.ref;
+	Verb* verb = (Verb*)verb_val.as.ref;
+	for (size_t i = 0; i < arr->q; i++) {
+		push_value(arr->values[i]);
+		doverb(verb);
+    Value pred_res = pop_value();
+    checktype(&pred_res, VALUE_TYPE_NUMBER, "[filter] verb must return 0 or 1");
+    if (pred_res.as.number) {
+      push_value(arr->values[i]);
+    }
+	}
+	pop_current();
+	deinit_Value(verb_val);
+	deinit_Value(arr_val);
+}
+
+
+void __rnd(void) {
+  Value res = {
+    .type = VALUE_TYPE_NUMBER,
+    .as.number = rand(),
+    .bounded = false
+  };
+  push_value(res);
+}
+
+
+void __mod(void) {
+  checkargc(2, "[%] need 2 numbers for mod");
+	Value a = pop_value();
+	checktype(&a, VALUE_TYPE_NUMBER, "[%] can't mod not a number");
+	Value b = pop_value();
+	checktype(&b, VALUE_TYPE_NUMBER, "[%] can't mod not a number");
+	Value res = {
+		.type = VALUE_TYPE_NUMBER,
+		.as.number = (long long)a.as.number % (long long)b.as.number,
+		.bounded = false
+	};
+	push_value(res);
+	deinit_Value(a);
+	deinit_Value(b);
+}
+
 
 
 #endif
